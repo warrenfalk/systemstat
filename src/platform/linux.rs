@@ -9,6 +9,7 @@ use super::unix;
 use nom::{digit, not_line_ending, space, is_space};
 use std::str;
 use std::path::Path;
+use std::cmp::max;
 
 fn read_file(path: &str) -> io::Result<String> {
     let mut s = String::new();
@@ -236,7 +237,7 @@ fn stat_mount(mount: ProcMountsData) -> io::Result<Filesystem> {
     let result = unsafe { statvfs(target.as_ptr() as *const c_char, &mut info) };
     match result {
         0 => Ok(Filesystem {
-            files: info.f_files as usize - info.f_ffree as usize,
+            files: max(info.f_files, max(info.f_ffree, info.f_favail)) as usize - info.f_ffree as usize,
             files_total: info.f_files as usize,
             files_avail: info.f_favail as usize,
             free: ByteSize::b(info.f_bfree as usize * info.f_bsize as usize),
